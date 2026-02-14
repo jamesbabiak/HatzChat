@@ -179,7 +179,7 @@ struct UploadedFilesPickerView: View {
                 Button("New Chat") { store.newConversation() }
                     .buttonStyle(.borderedProminent)
             } else {
-                Text("Attach an existing upload to the selected chat. No re-upload needed.")
+                Text("Attach an existing upload to the selected chat. No re-upload needed.\nNote: The Hatz API does not currently support deleting files.")
                     .foregroundStyle(.secondary)
                 Spacer()
             }
