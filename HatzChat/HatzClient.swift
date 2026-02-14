@@ -35,7 +35,6 @@ private struct StreamingChunk: Codable {
 }
 
 final class HatzClient {
-    // Keep as-is for the rest of the app
     private let baseURL = URL(string: "https://ai.hatz.ai/v1")!
     private let apiKey: String
 
@@ -44,7 +43,6 @@ final class HatzClient {
     }
 
     func fetchModels() async throws -> [AIModel] {
-        // Spec: GET /chat/models
         var req = URLRequest(url: baseURL.appendingPathComponent("chat/models"))
         req.httpMethod = "GET"
         req.setValue(apiKey, forHTTPHeaderField: "X-API-KEY")
@@ -57,12 +55,7 @@ final class HatzClient {
         return decoded.data
     }
 
-    /// List all files uploaded for this API key (GET /v1/files/)
     func listFiles() async throws -> [RemoteFile] {
-        // IMPORTANT:
-        // baseURL is https://ai.hatz.ai/v1 (no trailing slash)
-        // Using a relative URL like "files/" would resolve to https://ai.hatz.ai/files/
-        // So we explicitly hit the correct endpoint:
         let url = URL(string: "https://ai.hatz.ai/v1/files/")!
 
         var req = URLRequest(url: url)
@@ -77,8 +70,6 @@ final class HatzClient {
         return decoded.data
     }
 
-    /// Upload a file. The OpenAPI schema does not document the response fields.
-    /// We upload successfully and then try to extract a UUID-like string from the response body.
     func uploadFile(data: Data, filename: String, mimeType: String) async throws -> (rawJSON: String, fileUUID: String?) {
         let boundary = "Boundary-\(UUID().uuidString)"
         var req = URLRequest(url: baseURL.appendingPathComponent("files/upload"))
@@ -105,7 +96,6 @@ final class HatzClient {
         return (raw, extracted)
     }
 
-    /// Send a completion request. If stream=true, `onToken` is called as chunks arrive.
     func chatComplete(
         model: String,
         messages: [[String: String]],
@@ -137,7 +127,6 @@ final class HatzClient {
             return decoded.choices.first?.message.content ?? ""
         }
 
-        // STREAMING:
         let (asyncBytes, resp) = try await URLSession.shared.bytes(for: req)
 
         guard let http = resp as? HTTPURLResponse else {
@@ -181,6 +170,61 @@ final class HatzClient {
 
         return ""
     }
+
+    // MARK: - App Builder
+
+    func fetchApps() async throws -> [HatzApp] {
+        var req = URLRequest(url: baseURL.appendingPathComponent("app/list"))
+        req.httpMethod = "GET"
+        req.setValue(apiKey, forHTTPHeaderField: "X-API-KEY")
+        req.setValue("application/json", forHTTPHeaderField: "Accept")
+
+        let (data, resp) = try await URLSession.shared.data(for: req)
+        try Self.requireOK(resp, data: data)
+
+        let decoded = try JSONDecoder().decode(HatzAppListResponse.self, from: data)
+        return decoded.data
+    }
+
+    func fetchApp(appID: String) async throws -> HatzApp {
+        var req = URLRequest(url: baseURL.appendingPathComponent("app/\(appID)"))
+        req.httpMethod = "GET"
+        req.setValue(apiKey, forHTTPHeaderField: "X-API-KEY")
+        req.setValue("application/json", forHTTPHeaderField: "Accept")
+
+        let (data, resp) = try await URLSession.shared.data(for: req)
+        try Self.requireOK(resp, data: data)
+
+        return try JSONDecoder().decode(HatzApp.self, from: data)
+    }
+
+    func queryApp(
+        appID: String,
+        model: String?,
+        inputs: [String: String],
+        fileUUIDs: [String] = []
+    ) async throws -> String {
+
+        var req = URLRequest(url: baseURL.appendingPathComponent("app/\(appID)/query"))
+        req.httpMethod = "POST"
+        req.setValue(apiKey, forHTTPHeaderField: "X-API-KEY")
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        req.setValue("application/json", forHTTPHeaderField: "Accept")
+
+        let payload = HatzAppQueryRequest(inputs: inputs,
+                                          model: model,
+                                          stream: false,
+                                          fileUUIDs: fileUUIDs.isEmpty ? nil : fileUUIDs)
+        req.httpBody = try JSONEncoder().encode(payload)
+
+        let (data, resp) = try await URLSession.shared.data(for: req)
+        try Self.requireOK(resp, data: data)
+
+        let decoded = try JSONDecoder().decode(HatzAppQueryResponse.self, from: data)
+        return decoded.choices.first?.message.content ?? ""
+    }
+
+    // MARK: - Helpers
 
     private static func requireOK(_ resp: URLResponse, data: Data) throws {
         guard let http = resp as? HTTPURLResponse else {

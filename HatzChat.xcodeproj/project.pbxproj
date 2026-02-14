@@ -16,6 +16,9 @@
 		AB03A9172F4019A700925DF5 /* ComposerTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB03A9162F4019A000925DF5 /* ComposerTextView.swift */; };
 		AB03A9192F40209500925DF5 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AB03A9182F40209500925DF5 /* Assets.xcassets */; };
 		AB5EECAE2F40D05B0087DA4D /* UploadedFilesPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5EECAD2F40D0570087DA4D /* UploadedFilesPickerView.swift */; };
+		AB5EECBA2F410A360087DA4D /* AppsWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5EECB92F410A310087DA4D /* AppsWindowController.swift */; };
+		AB5EECBC2F410A9F0087DA4D /* AppsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5EECBB2F410A9B0087DA4D /* AppsView.swift */; };
+		AB5EECBE2F410AAE0087DA4D /* AppsModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5EECBD2F410AAB0087DA4D /* AppsModels.swift */; };
 		C7CEBAA8081158C79F5C3148 /* HatzChatApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBFB31EF18D75F94A87CBA22 /* HatzChatApp.swift */; };
 		C87BEAE3204D530B95340722 /* Keychain.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B9D93C7B2A5F809A465286 /* Keychain.swift */; };
 		DF4968A345865C05AFD9959C /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7FBBED7B78E5B419D74F611 /* ContentView.swift */; };
@@ -32,6 +35,9 @@
 		AB03A9162F4019A000925DF5 /* ComposerTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComposerTextView.swift; sourceTree = "<group>"; };
 		AB03A9182F40209500925DF5 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		AB5EECAD2F40D0570087DA4D /* UploadedFilesPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UploadedFilesPickerView.swift; sourceTree = "<group>"; };
+		AB5EECB92F410A310087DA4D /* AppsWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppsWindowController.swift; sourceTree = "<group>"; };
+		AB5EECBB2F410A9B0087DA4D /* AppsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppsView.swift; sourceTree = "<group>"; };
+		AB5EECBD2F410AAB0087DA4D /* AppsModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppsModels.swift; sourceTree = "<group>"; };
 		BBFB31EF18D75F94A87CBA22 /* HatzChatApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HatzChatApp.swift; sourceTree = "<group>"; };
 		D3AA1EB1CC5853F5A1B477A2 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		E7FBBED7B78E5B419D74F611 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -71,6 +77,7 @@
 				5052FF15B1B05926BD67A86C /* Info.plist */,
 				BBFB31EF18D75F94A87CBA22 /* HatzChatApp.swift */,
 				E7FBBED7B78E5B419D74F611 /* ContentView.swift */,
+				AB5EECB92F410A310087DA4D /* AppsWindowController.swift */,
 				AB5EECAD2F40D0570087DA4D /* UploadedFilesPickerView.swift */,
 				502B005A29875260BF6FBC95 /* ChatView.swift */,
 				F10E48AB053B50B6A14A36D1 /* Models.swift */,
@@ -78,6 +85,8 @@
 				AB03A9142F40199000925DF5 /* MarkdownText.swift */,
 				AB03A9162F4019A000925DF5 /* ComposerTextView.swift */,
 				71B813C5D08152DEBCA12E79 /* HatzClient.swift */,
+				AB5EECBB2F410A9B0087DA4D /* AppsView.swift */,
+				AB5EECBD2F410AAB0087DA4D /* AppsModels.swift */,
 				A3B9D93C7B2A5F809A465286 /* Keychain.swift */,
 				D3AA1EB1CC5853F5A1B477A2 /* SettingsView.swift */,
 				AB03A9182F40209500925DF5 /* Assets.xcassets */,
@@ -159,12 +168,15 @@
 				DF4968A345865C05AFD9959C /* ContentView.swift in Sources */,
 				03626820118757DF808D3B73 /* ChatView.swift in Sources */,
 				AB03A9152F40199400925DF5 /* MarkdownText.swift in Sources */,
+				AB5EECBE2F410AAE0087DA4D /* AppsModels.swift in Sources */,
 				5A0FAFC6F3655A14A649CD03 /* Models.swift in Sources */,
 				827BB7221E235A24BED99199 /* ChatStore.swift in Sources */,
 				1E05DE38051952B0BCA1064E /* HatzClient.swift in Sources */,
 				AB5EECAE2F40D05B0087DA4D /* UploadedFilesPickerView.swift in Sources */,
+				AB5EECBA2F410A360087DA4D /* AppsWindowController.swift in Sources */,
 				C87BEAE3204D530B95340722 /* Keychain.swift in Sources */,
 				3741BA3E3F3F5E098A23ABEE /* SettingsView.swift in Sources */,
+				AB5EECBC2F410A9F0087DA4D /* AppsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -296,7 +308,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = KY8P9V362C;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -309,7 +321,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.6;
-				MARKETING_VERSION = 1.2;
+				MARKETING_VERSION = 1.3;
 				PRODUCT_BUNDLE_IDENTIFIER = com.routed.HatzChat;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
@@ -323,7 +335,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = KY8P9V362C;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -336,7 +348,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.6;
-				MARKETING_VERSION = 1.2;
+				MARKETING_VERSION = 1.3;
 				PRODUCT_BUNDLE_IDENTIFIER = com.routed.HatzChat;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;

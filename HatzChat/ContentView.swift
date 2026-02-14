@@ -27,21 +27,24 @@ struct ContentView: View {
         .onAppear {
             store.load()
         }
+        .onChange(of: store.showApps) { _, newValue in
+            // Apps now open in a resizable window instead of a non-resizable sheet.
+            if newValue {
+                AppsWindowController.shared.show(store: store)
+                store.showApps = false
+            }
+        }
     }
 }
 
 private struct SidebarView: View {
     @EnvironmentObject var store: ChatStore
 
-    // Inline rename state
     @State private var renamingID: UUID? = nil
     @State private var renameDraft: String = ""
     @FocusState private var renameFocused: Bool
-
-    // Prevent commit when we're canceling (e.g., Escape)
     @State private var suppressCommitOnFocusLoss: Bool = false
 
-    // Uploaded files picker
     @State private var showUploadedFiles: Bool = false
 
     var body: some View {
@@ -51,51 +54,43 @@ private struct SidebarView: View {
                     chatRow(convo)
                         .tag(convo.id as UUID?)
                         .contextMenu {
-                            Button("Rename") {
-                                beginRename(convo)
-                            }
+                            Button("Rename") { beginRename(convo) }
                             Divider()
-                            Button("Delete") {
-                                store.deleteConversation(convo.id)
-                            }
+                            Button("Delete") { store.deleteConversation(convo.id) }
                         }
                 }
             }
         }
         .navigationTitle("HatzChat")
         .onChange(of: renameFocused) { focused in
-            // If focus leaves the field, commit (unless we’re canceling)
             if !focused, renamingID != nil, !suppressCommitOnFocusLoss {
                 commitRenameIfNeeded()
             }
         }
         .toolbar {
             ToolbarItemGroup(placement: .primaryAction) {
-                Button {
-                    store.newConversation()
-                } label: {
+                Button { store.newConversation() } label: {
                     Image(systemName: "square.and.pencil")
                 }
                 .help("New chat")
 
-                Button {
-                    showUploadedFiles = true
-                } label: {
+                Button { showUploadedFiles = true } label: {
                     Image(systemName: "tray.full")
                 }
                 .help("Show uploaded files")
 
-                Button {
-                    store.deleteSelectedConversation()
-                } label: {
+                Button { store.showApps = true } label: {
+                    Image(systemName: "square.grid.2x2")
+                }
+                .help("Apps")
+
+                Button { store.deleteSelectedConversation() } label: {
                     Image(systemName: "trash")
                 }
                 .disabled(store.selectedConversation == nil)
                 .help("Delete selected chat")
 
-                Button {
-                    store.showSettings = true
-                } label: {
+                Button { store.showSettings = true } label: {
                     Image(systemName: "gearshape")
                 }
                 .help("Settings")
@@ -114,21 +109,14 @@ private struct SidebarView: View {
                 .textFieldStyle(.plain)
                 .focused($renameFocused)
                 .lineLimit(1)
-                .onSubmit {
-                    commitRename(convo)
-                }
+                .onSubmit { commitRename(convo) }
                 .onAppear {
-                    DispatchQueue.main.async {
-                        renameFocused = true
-                    }
+                    DispatchQueue.main.async { renameFocused = true }
                 }
                 .onExitCommand {
-                    // ✅ ESC while editing should CANCEL and NOT COMMIT
                     suppressCommitOnFocusLoss = true
                     cancelRename()
-                    DispatchQueue.main.async {
-                        suppressCommitOnFocusLoss = false
-                    }
+                    DispatchQueue.main.async { suppressCommitOnFocusLoss = false }
                 }
         } else {
             Text(convo.title)
@@ -140,13 +128,8 @@ private struct SidebarView: View {
         renamingID = convo.id
         renameDraft = convo.title.trimmingCharacters(in: .whitespacesAndNewlines)
         if renameDraft.isEmpty { renameDraft = "New Chat" }
-
-        // Make sure the renamed chat is selected
         store.selectedConversationID = convo.id
-
-        DispatchQueue.main.async {
-            renameFocused = true
-        }
+        DispatchQueue.main.async { renameFocused = true }
     }
 
     private func cancelRename() {
@@ -166,14 +149,11 @@ private struct SidebarView: View {
 
     private func commitRename(_ convo: Conversation) {
         let trimmed = renameDraft.trimmingCharacters(in: .whitespacesAndNewlines)
-
-        // Don't allow empty titles; just cancel
         guard !trimmed.isEmpty else {
             cancelRename()
             return
         }
 
-        // Only update if changed
         if trimmed != convo.title {
             var updated = convo
             updated.title = trimmed

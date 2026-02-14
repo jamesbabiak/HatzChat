@@ -6,10 +6,15 @@ final class ChatStore: ObservableObject {
     @Published var conversations: [Conversation] = []
     @Published var selectedConversationID: UUID?
     @Published var showSettings: Bool = false
+    @Published var showApps: Bool = false
 
     @Published var apiKey: String = Keychain.loadAPIKey() ?? ""
     @Published var availableModels: [AIModel] = []
     @Published var isLoadingModels: Bool = false
+
+    @Published var availableApps: [HatzApp] = []
+    @Published var isLoadingApps: Bool = false
+
     @Published var lastError: String?
 
     // Remember last-used model for new chats
@@ -34,18 +39,19 @@ final class ChatStore: ObservableObject {
     func load() {
         conversations = persistence.load()
 
-        // If we have chats but none selected yet, select first
         if selectedConversationID == nil {
             selectedConversationID = conversations.first?.id
         }
 
-        // If we loaded a selected conversation, update lastUsedModel from it
         if let c = selectedConversation, !c.model.isEmpty {
             lastUsedModel = c.model
         }
 
         if !apiKey.isEmpty {
-            Task { await refreshModels() }
+            Task {
+                await refreshModels()
+                await refreshApps()
+            }
         }
     }
 
@@ -56,7 +62,7 @@ final class ChatStore: ObservableObject {
     func newConversation() {
         var convo = Conversation()
         convo.title = "New Chat"
-        convo.model = lastUsedModel  // use last selected model by default
+        convo.model = lastUsedModel
         conversations.insert(convo, at: 0)
         selectedConversationID = convo.id
         save()
@@ -75,12 +81,10 @@ final class ChatStore: ObservableObject {
         save()
     }
 
-    /// Update a conversation in memory; optionally persist.
     func updateConversation(_ convo: Conversation, persist: Bool = true) {
         guard let idx = conversations.firstIndex(where: { $0.id == convo.id }) else { return }
         conversations[idx] = convo
 
-        // Keep lastUsedModel in sync with whatever the user sets
         if !convo.model.isEmpty {
             lastUsedModel = convo.model
         }
@@ -92,10 +96,15 @@ final class ChatStore: ObservableObject {
         apiKey = key.trimmingCharacters(in: .whitespacesAndNewlines)
         if apiKey.isEmpty {
             Keychain.deleteAPIKey()
+            availableModels = []
+            availableApps = []
         } else {
             try? Keychain.saveAPIKey(apiKey)
         }
-        Task { await refreshModels() }
+        Task {
+            await refreshModels()
+            await refreshApps()
+        }
     }
 
     func refreshModels() async {
@@ -105,12 +114,10 @@ final class ChatStore: ObservableObject {
         do {
             availableModels = try await HatzClient(apiKey: apiKey).fetchModels()
 
-            // If lastUsedModel isn’t in the list (rare), fall back to first model
             if !availableModels.isEmpty,
                !availableModels.contains(where: { $0.name == lastUsedModel }) {
                 lastUsedModel = availableModels.first!.name
 
-                // Also update currently selected conversation model if needed
                 if var c = selectedConversation {
                     c.model = lastUsedModel
                     updateConversation(c)
@@ -120,7 +127,22 @@ final class ChatStore: ObservableObject {
             lastError = error.localizedDescription
         }
     }
+
+    func refreshApps() async {
+        guard !apiKey.isEmpty else { return }
+        isLoadingApps = true
+        defer { isLoadingApps = false }
+        do {
+            var apps = try await HatzClient(apiKey: apiKey).fetchApps()
+            apps.sort { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+            availableApps = apps
+        } catch {
+            lastError = error.localizedDescription
+        }
+    }
 }
+
+// MARK: - Persistence (unchanged from v1.1)
 
 struct ChatPersistence {
     private let fileName = "chats.json"
