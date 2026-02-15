@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 
 struct ContentView: View {
     @EnvironmentObject var store: ChatStore
@@ -48,19 +49,35 @@ private struct SidebarView: View {
     @State private var showUploadedFiles: Bool = false
 
     var body: some View {
-        List(selection: $store.selectedConversationID) {
-            Section("Chats") {
-                ForEach(store.conversations) { convo in
-                    chatRow(convo)
-                        .tag(convo.id as UUID?)
-                        .contextMenu {
-                            Button("Rename") { beginRename(convo) }
-                            Divider()
-                            Button("Delete") { store.deleteConversation(convo.id) }
-                        }
+        ZStack {
+            GeometryReader { geo in
+                Image(nsImage: NSApp.applicationIconImage)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: min(geo.size.width * 0.70, 220))
+                    .saturation(0)
+                    .opacity(0.10)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+                    .allowsHitTesting(false)
+            }
+
+            List(selection: $store.selectedConversationID) {
+                Section("Chats") {
+                    ForEach(store.conversations) { convo in
+                        chatRow(convo)
+                            .tag(convo.id as UUID?)
+                            .contextMenu {
+                                Button("Rename") { beginRename(convo) }
+                                Divider()
+                                Button("Delete") { store.deleteConversation(convo.id) }
+                            }
+                    }
                 }
             }
+            .scrollContentBackground(.hidden)
+            .background(Color.clear)
         }
+        .background(.ultraThinMaterial)
         .navigationTitle("HatzChat")
         .onChange(of: renameFocused, initial: false) { oldValue, newValue in
             if !newValue, renamingID != nil, !suppressCommitOnFocusLoss {
