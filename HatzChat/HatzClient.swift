@@ -140,31 +140,19 @@ final class HatzClient {
             throw NSError(domain: "HatzClient", code: http.statusCode, userInfo: [NSLocalizedDescriptionKey: msg])
         }
 
-        var buffer = ""
-
-        for try await b in asyncBytes {
+        for try await line in asyncBytes.lines {
             if Task.isCancelled { break }
-
-            if let s = String(data: Data([b]), encoding: .utf8) {
-                buffer.append(s)
-            }
-
-            while let newlineIndex = buffer.firstIndex(of: "\n") {
-                let rawLine = String(buffer[..<newlineIndex])
-                buffer.removeSubrange(...newlineIndex)
-
-                let line = rawLine.replacingOccurrences(of: "\r", with: "")
-
-                let cleaned = Self.cleanStreamingLine(line)
-                if cleaned.isEmpty { continue }
-                if cleaned == "[DONE]" { return "" }
-
-                if let data = cleaned.data(using: .utf8),
-                   let decoded = try? JSONDecoder().decode(StreamingChunk.self, from: data) {
-                    await onToken(decoded.message)
-                } else {
-                    await onToken(cleaned)
-                }
+            
+            let cleaned = Self.cleanStreamingLine(line)
+            if cleaned.isEmpty { continue }
+            if cleaned == "[DONE]" { return "" }
+            
+            if let data = cleaned.data(using: .utf8),
+               let decoded = try? JSONDecoder().decode(StreamingChunk.self, from: data) {
+                await onToken(decoded.message)
+            } else {
+                await onToken(cleaned)
+            
             }
         }
 

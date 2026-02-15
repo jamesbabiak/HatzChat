@@ -65,6 +65,23 @@ struct SettingsView: View {
                 }
             }
 
+            GroupBox("About") {
+                VStack(alignment: .leading, spacing: 8) {
+
+                    Link("Open HatzChat on GitHub",
+                         destination: URL(string: "https://github.com/jamesbabiak/HatzChat")!)
+
+                    Text("""
+                    HatzChat is an independent application developed by James Babiak. It utilizes the public Hatz API but is not affiliated with, endorsed by, sponsored by, or officially connected to Hatz AI in any way. “Hatz” and related marks are the property of their respective owners.
+                    """)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true) // ← IMPORTANT
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .padding(6)
+            }
+            
             Spacer()
 
             HStack {
@@ -74,7 +91,7 @@ struct SettingsView: View {
             }
         }
         .padding(18)
-        .frame(width: 520, height: 420)
+        .frame(minWidth: 520, minHeight: 480)
         .onAppear {
             apiKeyDraft = store.apiKey
         }

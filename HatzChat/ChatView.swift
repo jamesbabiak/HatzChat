@@ -16,6 +16,9 @@ struct ChatView: View {
     @State private var pendingAppend: String = ""
     @State private var flushTask: Task<Void, Never>?
 
+    // Tool notice de-duplication (prevents repeated "Using tool" spam)
+    @State private var seenToolNotices: Set<String> = []
+
     let conversation: Conversation
 
     var body: some View {
@@ -89,10 +92,10 @@ struct ChatView: View {
                 }
                 .padding(16)
             }
-            .onChange(of: store.selectedConversation?.messages.count ?? 0) { _, _ in
+            .onChange(of: store.selectedConversation?.messages.count ?? 0) { _ in
                 scrollToBottom(proxy)
             }
-            .onChange(of: pendingAppend) { _, _ in
+            .onChange(of: pendingAppend) { _ in
                 // Auto-scroll while streaming
                 scrollToBottom(proxy)
             }
@@ -154,6 +157,7 @@ struct ChatView: View {
 
         isSending = true
         pendingAppend = ""
+        seenToolNotices = []   // reset per message
 
         streamingTask = Task {
             defer {
@@ -213,19 +217,25 @@ Do not include debug/tool logs in the response.
             flushTask = Task {
                 while !Task.isCancelled {
                     try? await Task.sleep(nanoseconds: 80_000_000) // 80ms
-                    await MainActor.run {
-                        flushPending(to: assistantID)
-                    }
+                    await flushPending(to: assistantID)
                 }
             }
 
             do {
-                _ = try await client.chatComplete(
+                try await client.chatComplete(
                     model: convo.model,
                     messages: requestMessages,
                     fileUUIDs: fileUUIDs,
                     stream: true,
                     onToken: { token in
+                        // De-dupe tool notices (some models emit the same notice many times)
+                        if let toolName = DebugFilter.extractToolName(from: token) {
+                            if seenToolNotices.contains(toolName) { return }
+                            seenToolNotices.insert(toolName)
+                            pendingAppend += "🔧 **Using tool:** *\(toolName)*\n\n"
+                            return
+                        }
+
                         let cleaned = DebugFilter.cleanStreaming(token)
                         if cleaned.isEmpty { return }
                         pendingAppend += cleaned
@@ -233,9 +243,7 @@ Do not include debug/tool logs in the response.
                 )
 
                 // Final flush
-                await MainActor.run {
-                    flushPending(to: assistantID, force: true)
-                }
+                await flushPending(to: assistantID, force: true)
 
                 // Final cleanup + persist once
                 await MainActor.run {
@@ -340,10 +348,44 @@ Do not include debug/tool logs in the response.
 
 /// Filters out common “tool/debug” wrappers seen in model output.
 private enum DebugFilter {
+
+    /// Attempts to extract a tool name from common "Using tool" notices.
+    /// Returns nil if the token isn't a tool notice.
+    static func extractToolName(from token: String) -> String? {
+        let t = token.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !t.isEmpty else { return nil }
+
+        // Match patterns like:
+        // 🔧 **Using tool:** *google_weather_forecast*
+        // **Using tool:** *foo*
+        // Using tool: foo
+        let patterns: [String] = [
+            #"(?i)Using tool:\s*\*([^*]+)\*"#,
+            #"(?i)Using tool:\s*`([^`]+)`"#,
+            #"(?i)Using tool:\s*([A-Za-z0-9_\-\.]+)"#
+        ]
+
+        for p in patterns {
+            if let r = try? NSRegularExpression(pattern: p),
+               let m = r.firstMatch(in: t, range: NSRange(t.startIndex..., in: t)),
+               m.numberOfRanges >= 2,
+               let range = Range(m.range(at: 1), in: t) {
+                let name = String(t[range]).trimmingCharacters(in: .whitespacesAndNewlines)
+                if !name.isEmpty { return name }
+            }
+        }
+
+        return nil
+    }
+
     static func cleanStreaming(_ token: String) -> String {
         // Drop tool wrappers early if they appear
         if token.contains("<details") || token.contains("</details>") { return "" }
         if token.contains("\"exit_code\"") && token.contains("\"output\"") { return "" }
+
+        // If a tool notice slips through, drop it here (we handle a single deduped line elsewhere)
+        if extractToolName(from: token) != nil { return "" }
+
         return token
     }
 
@@ -352,6 +394,11 @@ private enum DebugFilter {
 
         // Remove <details>…</details> blocks
         t = t.replacingOccurrences(of: #"(?s)<details.*?>.*?</details>"#,
+                                  with: "",
+                                  options: .regularExpression)
+
+        // Remove any tool notices that may have slipped through (optional safety)
+        t = t.replacingOccurrences(of: #"(?im)^\s*🔧\s*\*\*Using tool:\*\*\s*\*.*\*\s*$\n?"#,
                                   with: "",
                                   options: .regularExpression)
 
